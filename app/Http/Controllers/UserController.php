@@ -6,19 +6,22 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
+
 
 
 
 class UserController extends Controller
 {
     public function store(Request $request)
-    {
+{
+    try {
         $request->validate([
-            'name' => 'required',
+            'name' => 'required|unique:users',
             'email' => 'required|email|unique:users',
             'mobile' => 'required|unique:users',
             'usertype' => 'required',
-            'password' => 'required',
+            'password' => 'required|string|min:8|max:255|regex:/^(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]+$/',
             'company_name' => 'required',
             'status' => 'required',
             'is_delete' => 'required',
@@ -31,7 +34,14 @@ class UserController extends Controller
         $user->save();
 
         return response()->json($user, 201);
+    } catch (ValidationException $e) {
+        // Handle validation errors
+        return response()->json(['error' => $e->errors()], 422);
+    } catch (\Exception $e) {
+        // Handle other exceptions
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
 
     public function login(Request $request)
     {
